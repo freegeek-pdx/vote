@@ -281,7 +281,6 @@ sub report {
 		$results .= format_table($text);
 	    }
   }
-  $str .= "<div class=\"printable\">";
   $str .= "<h1>" . MyUtils::hoomanize($self->{name}) . "</h1>";
   $str .= "<p><b>Votes:</b> " . $number_votes . "</p>";
   my $desc = "" . $self->{description};
@@ -296,7 +295,6 @@ sub report {
   $str .= $results;
   $str .= "ERROR: failed to count correctly\n" if($number_votes != $self->number_votes);
 #  $str .= "<h2>Raw Results</h2><pre>\n" . $report . "</pre>\n"; # formatted HTML now
-  $str .= "</div>";
   return $str;
 }
 
