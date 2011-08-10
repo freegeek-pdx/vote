@@ -281,6 +281,7 @@ sub report {
 		$results .= format_table($text);
 	    }
   }
+  $str .= "<div class=\"printable\">";
   $str .= "<h1>" . MyUtils::hoomanize($self->{name}) . "</h1>";
   $str .= "<p><b>Votes:</b> " . $number_votes . "</p>";
   my $desc = "" . $self->{description};
@@ -295,6 +296,7 @@ sub report {
   $str .= $results;
   $str .= "ERROR: failed to count correctly\n" if($number_votes != $self->number_votes);
 #  $str .= "<h2>Raw Results</h2><pre>\n" . $report . "</pre>\n"; # formatted HTML now
+  $str .= "</div>";
   return $str;
 }
 
@@ -444,9 +446,18 @@ sub show {
     my $v = shift;
     header_for_main();
     print quickform("add_vote", "Add Vote", "add", $v->{name})->render;
+    print quickform("print_ballots", "Print Ballots", "print", $v->{name})->render;
     print quickform("edit_info", "Edit Metadata", "edit", $v->{name})->render;
     print quickform("delete", "Delete All", "delete", $v->{name})->render;
     print $v->report;
+}
+
+use CGI;
+
+sub header_for_empty {
+    print CGI::header();
+    my $s = $MyUtils::css;
+    print "<link href=\"$s\" rel=\"stylesheet\" type=\"text/css\" />\n";
 }
 
 sub do_main {
@@ -558,6 +569,24 @@ sub do_main {
     } elsif($mode eq "delete") { # mode is view
 	Vote->load(basename($thing_name))->unlink;
 	do_main("index");
+    } elsif($mode eq "print") {
+	my $vote = Vote->load(basename($thing_name));
+	my $form = CGI::FormBuilder->new(name => "ballots", fields => ['how_many', 'starting_number'], header => 1, method   => 'post', required => 'ALL', keepextras => ['mode', 'name'], title => 'Print ballots for ' . MyUtils::hoomanize($vote->{name}), stylesheet => $MyUtils::css);
+	if($form->submitted && $form->validate) {
+	    my $many = $form->field('how_many');
+	    my $start = $form->field('starting_number');
+	    my $end = $start + $many - 1;
+	    header_for_empty();
+	    print "<div class=\"left\">things here</div>";
+	    print "<div class=\"right\">more things here</div>";
+	    print "<hr />";
+	    foreach($start .. $end) {
+		print "# " . $_ . "\n";
+	    }
+	} else {
+	    $form->field(name => 'starting_number', value => '1');
+	    print $form->render;
+	}
     } else {
 	show(Vote->load(basename($thing_name)));
     }
