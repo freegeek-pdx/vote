@@ -402,7 +402,10 @@ sub _to_line {
   my $self = shift;
   my $myline = "";
   my $lastfound = 0;
-  my $max = scalar(@{$self->{cands}}); # TODO: get real max of input values, not just what we think the max will be
+  my $max = scalar(@{$self->{cands}});
+  foreach my $char(@{$self->{cands}}) {
+      $max = $self->{$char} if ($self->{$char} > $max);
+  }
   foreach my $num(1 .. $max) {
     foreach my $char(@{$self->{cands}}) {
       if(defined($self->{$char}) && $self->{$char} eq $num) {
