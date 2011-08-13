@@ -88,7 +88,11 @@ sub new {
 
 sub number_votes {
   my $self = shift;
-  return scalar(@{$self->{votes}});
+  my $count = 0;
+  foreach(@{$self->{votes}}) {
+      $count++ if(ref($_) eq "Vote::Individual");
+  }
+  return $count;
 }
 
 sub number_cands {
@@ -128,6 +132,17 @@ sub edit_vote {
     return $_ if(defined($_->{ref}) && $_->{ref} eq $lookfor);
   }
   return;
+}
+
+sub add_or_edit_vote {
+  my $self = shift;
+  my $lookfor = shift;
+  my $result = $self->edit_vote($lookfor);
+  unless(defined($result)) {
+      $result = $self->add_vote;
+      $result->{ref} = $lookfor;
+  }
+  return $result;
 }
 
 sub methods {
@@ -195,7 +210,7 @@ sub save {
     }
   }
   foreach(@{$self ->{votes}}) {
-    print $FH $_->to_line;
+    print $FH $_->to_line if(ref($_) eq "Vote::Individual");
   }
   close $FH;
 }
@@ -387,9 +402,10 @@ sub _to_line {
   my $self = shift;
   my $myline = "";
   my $lastfound = 0;
-  foreach my $num(1 .. scalar(@{$self->{cands}})) {
+  my $max = scalar(@{$self->{cands}}); # TODO: get real max of input values, not just what we think the max will be
+  foreach my $num(1 .. $max) {
     foreach my $char(@{$self->{cands}}) {
-      if($self->{$char} eq $num) {
+      if(defined($self->{$char}) && $self->{$char} eq $num) {
         $myline .= "= " if($lastfound eq $num);
         $myline .= $char . " ";
         $lastfound = $num;
@@ -570,6 +586,7 @@ sub do_main {
     } elsif($mode eq "ballots") {
 	my $vote = Vote->load(basename($thing_name));
 	my $form = CGI::FormBuilder->new(name => "ballots", fields => ['how_many', 'starting_number'], header => 1, method   => 'post', required => 'ALL', keepextras => ['mode', 'name'], title => 'Print or edit ballots for ' . MyUtils::hoomanize($vote->{name}), stylesheet => $MyUtils::css);
+	my $tabindex = 1;
 	if($form->submitted && $form->validate) {
 	    my $many = $form->field('how_many');
 	    my $start = $form->field('starting_number');
@@ -586,18 +603,49 @@ sub do_main {
 		$str .= "<h1>" . $vote->{name} . "</h1>";
 		$str .= "Reference ID#" . $num;
 		$str .= "<p>" . $vote->{description} . "</p>";
+		my $b = $vote->add_or_edit_vote($num);
 		foreach my $cand(@{$vote->{cands}}) {
-		    $str .= "<input size=\"1\"/> <b>" . $cand . ":</b> " . $vote->{descriptions}->{$cand} . "<br />";
+		    $str .= "<input tabindex=\"" . $tabindex . "\" name=\"" . "vote_" . $num . "_" . $cand . "\" size=\"1\" value=\"" . ($b->{$cand} || "") . "\"/> <b>" . $cand . ":</b> " . $vote->{descriptions}->{$cand} . "<br />";
+		    $tabindex++;
 		}
 		$str .= "</fieldset>";
 		$hash{$div} .= $str;
 	    }
+	    print '<form action="voteengine.cgi" class="fb_form" id="save_ballots" method="post" name="save_ballots">' . '<input id="_submitted_save_ballots" name="_submitted_save_ballots" type="hidden" value="1" />' . '<input id="mode" name="mode" type="hidden" value="save_ballots" />' . '<input id="name" name="name" type="hidden" value="' . $vote->{name} . '" />' . '<input id="start" name="start" type="hidden" value="' . $start . '" />' . '<input id="end" name="end" type="hidden" value="' . $end . '" />';
+	    print '<div class="noprint" style="clear: left;">' . '<h1>Printing or Editing Ballots</h1><input class="fb_button" id="save_ballots_submit" name="_submit" type="submit" tabindex=\"" . $tabindex . "\" value="Save" />' . '</div>';
 	    print "<div class=\"left\">" . $hash{"left"} . "</div>";
 	    print "<div class=\"right\">" . $hash{"right"} . "</div>";
+	    print '</form>';
 	} else {
 	    $form->field(name => 'starting_number', value => '1');
 	    print $form->render;
 	}
+    } elsif($mode eq "save_ballots") {
+	my $form = CGI::FormBuilder->new(name => "save_ballots", header => 1, method   => 'post', stylesheet => $MyUtils::css);
+	my $vote = Vote->load(basename($thing_name));;
+	my @cands = @{$vote->{cands}};
+	my $start = $form->cgi_param("start");
+	my $end = $form->cgi_param("end");
+	foreach my $num($start .. $end) {
+	    my $b = $vote->add_or_edit_vote($num);
+	    my $changed = 0;
+	    foreach my $cand(@cands) {
+		my $val = $form->cgi_param("vote_" . $num . "_" . $cand);
+		if(defined($val)) {
+		    if($val ne "") {
+			$changed += 1;
+		    }
+		    $b->{$cand} = $val;
+		}
+	    }
+	    if($changed > 0) {
+		$b->updated;
+	    } else {
+#	    if(!defined($b->{line})) {
+		$vote->remove_vote($num);
+	    }
+	}
+	show($vote);
     } else {
 	show(Vote->load(basename($thing_name)));
     }
