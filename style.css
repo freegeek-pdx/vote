@@ -5,16 +5,15 @@ input, select, textarea {
 .left {
 	position: absolute;
 	left: 1%;
-	width: 47%;
-	border-right: 1px solid black;
+	width: 49%;
 }
 
 .right {
 	position: absolute;
 	right: 1%;
-	width: 47%;
+	width: 49%;
 }
 
-hr {
-	border: 1px solid black;
+@media print {
+.noprint { display: none; }
 }

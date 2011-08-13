@@ -444,7 +444,7 @@ sub show {
     my $v = shift;
     header_for_main();
     print quickform("add_vote", "Add Vote", "add", $v->{name})->render;
-    print quickform("print_ballots", "Print Ballots", "print", $v->{name})->render;
+    print quickform("show_ballots", "Show Ballots", "ballots", $v->{name})->render;
     print quickform("edit_info", "Edit Metadata", "edit", $v->{name})->render;
     print quickform("delete", "Delete All", "delete", $v->{name})->render;
     print $v->report;
@@ -567,20 +567,33 @@ sub do_main {
     } elsif($mode eq "delete") { # mode is view
 	Vote->load(basename($thing_name))->unlink;
 	do_main("index");
-    } elsif($mode eq "print") {
+    } elsif($mode eq "ballots") {
 	my $vote = Vote->load(basename($thing_name));
-	my $form = CGI::FormBuilder->new(name => "ballots", fields => ['how_many', 'starting_number'], header => 1, method   => 'post', required => 'ALL', keepextras => ['mode', 'name'], title => 'Print ballots for ' . MyUtils::hoomanize($vote->{name}), stylesheet => $MyUtils::css);
+	my $form = CGI::FormBuilder->new(name => "ballots", fields => ['how_many', 'starting_number'], header => 1, method   => 'post', required => 'ALL', keepextras => ['mode', 'name'], title => 'Print or edit ballots for ' . MyUtils::hoomanize($vote->{name}), stylesheet => $MyUtils::css);
 	if($form->submitted && $form->validate) {
 	    my $many = $form->field('how_many');
 	    my $start = $form->field('starting_number');
 	    my $end = $start + $many - 1;
 	    header_for_empty();
-	    print "<div class=\"left\">things here</div>";
-	    print "<div class=\"right\">more things here</div>";
-	    print "<hr />";
-	    foreach($start .. $end) {
-		print "# " . $_ . "\n";
+	    my $count = 0;
+	    my %hash = ();
+	    $hash{"left"} = "";
+	    $hash{"right"} = "";
+	    foreach my $num($start .. $end) {
+		my $div = (($count % 2) == 0) ? "left" : "right";
+		$count += 1;
+		my $str = "<fieldset>";
+		$str .= "<h1>" . $vote->{name} . "</h1>";
+		$str .= "Reference ID#" . $num;
+		$str .= "<p>" . $vote->{description} . "</p>";
+		foreach my $cand(@{$vote->{cands}}) {
+		    $str .= "<input size=\"1\"/> <b>" . $cand . ":</b> " . $vote->{descriptions}->{$cand} . "<br />";
+		}
+		$str .= "</fieldset>";
+		$hash{$div} .= $str;
 	    }
+	    print "<div class=\"left\">" . $hash{"left"} . "</div>";
+	    print "<div class=\"right\">" . $hash{"right"} . "</div>";
 	} else {
 	    $form->field(name => 'starting_number', value => '1');
 	    print $form->render;
