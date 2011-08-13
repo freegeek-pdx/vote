@@ -77,13 +77,20 @@ sub new {
   $self->{descriptions} = {};
   $self->{description} = "";
 
-  my @c = ();
-  foreach(1 .. $number_cands) {
-    push @c, chr(64 + $_);
-  }
-  $self->{cands} = \@c;
+  $self->_set_num_cands($number_cands);
 
   return $self;
+}
+
+sub _set_num_cands {
+    my ($self, $number_cands) = @_;
+
+    my @c = ();
+    foreach(1 .. $number_cands) {
+	push @c, chr(64 + $_);
+    }
+    $self->{cands} = \@c;
+    return;
 }
 
 sub number_votes {
@@ -103,6 +110,15 @@ sub number_cands {
   } else {
     return 0;
   }
+}
+
+sub update_cands {
+    my ($self, $number_cands) = @_;
+    _set_num_cands(@_);
+    foreach my $v(@{$self->{votes}}) {
+	$v->{cands} = $self->{cands};
+	$v->updated;
+    }
 }
 
 sub add_vote {
@@ -552,8 +568,8 @@ sub do_main {
 #	}
     } elsif($mode eq "edit") {
 	my $vote = Vote->load(basename($thing_name));
-	my @more = qw(description);
-	my @required = ();
+	my @more = qw(description number_candidates);
+	my @required = qw(number_candidates);
 	my @cands = @{$vote->{cands}};
 	foreach my $c(@cands) {
 	    my $o = 'option_' . $c;
@@ -562,6 +578,7 @@ sub do_main {
 	}
 	my $form = CGI::FormBuilder->new(name => "new_one", fields => \@more, header => 1, method   => 'post', required => \@required, keepextras => ['mode', 'name'], title => 'Editing vote metadata for ' . MyUtils::hoomanize($vote->{name}), stylesheet => $MyUtils::css);
 	$form->field(name => 'description', type => 'textarea');
+	$form->field(name => 'number_candidates', validate => 'NUM');
 	my @opts = Vote->methods;
 	$form->field(name => 'method', type => 'select',selectname => 0, options => \@opts);
 	if($form->submitted && $form->validate) {
@@ -570,6 +587,9 @@ sub do_main {
 		$vote->{description} = $desc;
 
 		$vote->{method} = $form->field('method');
+
+		my $cand_num = $form->field('number_candidates');
+		$vote->update_cands($cand_num) if($cand_num != $vote->number_cands);
 
 		foreach my $c(@cands) {
 		    my $opt = $form->field('option_' . $c);
@@ -581,6 +601,7 @@ sub do_main {
 	    if(!$form->submitted) {
 		$form->field(name => 'description', value => $vote->{description});
 		$form->field(name => 'method', value => $vote->{method});
+		$form->field(name => 'number_candidates', value => $vote->number_cands);
 		foreach my $c(@cands) {
 		    my $o = 'option_' . $c;
 		    $form->field(name => $o, value => $vote->{descriptions}->{$c});
