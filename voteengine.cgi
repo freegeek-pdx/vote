@@ -146,7 +146,7 @@ sub add_or_edit_vote {
 }
 
 sub methods {
-  return qw(schulze); # whattelse?
+  return qw(schulze rp); # whattelse?
 }
 
 sub default_method {
@@ -559,10 +559,14 @@ sub do_main {
 	}
 	my $form = CGI::FormBuilder->new(name => "new_one", fields => \@more, header => 1, method   => 'post', required => \@required, keepextras => ['mode', 'name'], title => 'Editing vote metadata for ' . MyUtils::hoomanize($vote->{name}), stylesheet => $MyUtils::css);
 	$form->field(name => 'description', type => 'textarea');
+	my @opts = Vote->methods;
+	$form->field(name => 'method', type => 'select',selectname => 0, options => \@opts);
 	if($form->submitted && $form->validate) {
 		my $desc = $form->field('description');
 
 		$vote->{description} = $desc;
+
+		$vote->{method} = $form->field('method');
 
 		foreach my $c(@cands) {
 		    my $opt = $form->field('option_' . $c);
@@ -573,6 +577,7 @@ sub do_main {
 	} else {
 	    if(!$form->submitted) {
 		$form->field(name => 'description', value => $vote->{description});
+		$form->field(name => 'method', value => $vote->{method});
 		foreach my $c(@cands) {
 		    my $o = 'option_' . $c;
 		    $form->field(name => $o, value => $vote->{descriptions}->{$c});
