@@ -459,10 +459,10 @@ sub header_for_main {
 sub show {
     my $v = shift;
     header_for_main();
-    print quickform("add_vote", "Add Vote", "add", $v->{name})->render;
+#    print quickform("add_vote", "Add Vote", "add", $v->{name})->render;
     print quickform("show_ballots", "Show Ballots", "ballots", $v->{name})->render;
-    print quickform("edit_info", "Edit Metadata", "edit", $v->{name})->render;
-    print quickform("delete", "Delete All", "delete", $v->{name})->render;
+    print quickform("edit_info", "Options", "edit", $v->{name})->render;
+    print quickform("delete", "Delete Completely", "delete", $v->{name})->render;
     print $v->report;
 }
 
@@ -519,34 +519,34 @@ sub do_main {
 		print quickform("vote_" . $vote, "View " . MyUtils::hoomanize($vote), "view", $vote)->render;
 	    }
 	}
-    } elsif($mode eq "add") {
-	my $vote = Vote->load(basename($thing_name));
-	my @opts = qw(ref);
-	my $h = {};
-	my $l = {};
-	$l->{ref} = 'Reference ID';
-	my @list = @{$vote->{cands}};
-
-	$h->{'ref'} = 'NUM'; # should ref be validated too?
-	foreach my $c(@list) {
-	    my $o = 'option_' . $c;
-	    my $desc = $vote->{descriptions}->{$c} || "";
-	    push @opts, $o;
-	    $h->{$o} = 'NUM';
-	    $l->{$o} = $c . ': ' . $desc;
-	}
-	my $form = CGI::FormBuilder->new(name => "new_one", fields => \@opts, header => 1, method   => 'post', required => ['ref'], keepextras => ['mode', 'name'], validate => $h, title => 'Add Vote', labels => $l, title => 'Add Vote', stylesheet => $MyUtils::css);
-	if($form->submitted && $form->validate) {
-	    my $this = $vote->add_vote;
-	    $this->{ref} = $form->field('ref');
-	    foreach my $c(@list) {
-		$this->{$c} = $form->field('option_' . $c);
-	    }
-	    $this->updated;
-	    show($vote);
-	} else {
-	    print $form->render;
-	}
+#    } elsif($mode eq "add") {
+#	my $vote = Vote->load(basename($thing_name));
+#	my @opts = qw(ref);
+#	my $h = {};
+#	my $l = {};
+#	$l->{ref} = 'Reference ID';
+#	my @list = @{$vote->{cands}};
+#
+#	$h->{'ref'} = 'NUM'; # should ref be validated too?
+#	foreach my $c(@list) {
+#	    my $o = 'option_' . $c;
+#	    my $desc = $vote->{descriptions}->{$c} || "";
+#	    push @opts, $o;
+#	    $h->{$o} = 'NUM';
+#	    $l->{$o} = $c . ': ' . $desc;
+#	}
+#	my $form = CGI::FormBuilder->new(name => "new_one", fields => \@opts, header => 1, method   => 'post', required => ['ref'], keepextras => ['mode', 'name'], validate => $h, title => 'Add Vote', labels => $l, title => 'Add Vote', stylesheet => $MyUtils::css);
+#	if($form->submitted && $form->validate) {
+#	    my $this = $vote->add_vote;
+#	    $this->{ref} = $form->field('ref');
+#	    foreach my $c(@list) {
+#		$this->{$c} = $form->field('option_' . $c);
+#	    }
+#	    $this->updated;
+#	    show($vote);
+#	} else {
+#	    print $form->render;
+#	}
     } elsif($mode eq "edit") {
 	my $vote = Vote->load(basename($thing_name));
 	my @more = qw(description);
