@@ -2,7 +2,7 @@
 
 package MyUtils;
 
-our $css = '/~ryan52/style.css';
+our $css = '/style.css';
 
 sub hoomanize {
     my $s = shift;
