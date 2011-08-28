@@ -19,8 +19,8 @@ sub dehoomanize {
 package Vote;
 
 
-my $engine = "/home/ryan52/voteengine-0.99/voteengine.py";
-my $dir = "/root/votes/";
+my $engine = "/root/vote_stuff/voteengine/voteengine.py";
+my $dir = "/root/vote_stuff/votes/";
 
 use File::Basename qw(basename);
 use File::Spec qw(catfile);
