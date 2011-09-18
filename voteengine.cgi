@@ -498,6 +498,7 @@ sub do_main {
     if($mode eq "index") {
 	my @fields = qw(name candidates);
 	my $form = CGI::FormBuilder->new(name => "new_one", fields => \@fields, header => 1, method   => 'post', required => 'ALL', keepextras => ['mode', 'step'], validate => {candidates => 'NUM'}, title => 'Create New Vote', labels => {candidates => '# of Candidates'}, stylesheet => $MyUtils::css);
+	$form->cgi_param('mode', 'index');
 	if($form->submitted && $form->validate) {
 	    my $step = $form->cgi_param('step');
 	    my @more = qw(description);
