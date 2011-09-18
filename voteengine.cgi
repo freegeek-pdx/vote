@@ -4,13 +4,13 @@ package MyUtils;
 
 our $css = '/style.css';
 
-sub hoomanize {
+sub to_human {
     my $s = shift;
     $s =~ s/_/ /g;
     return $s;
 }
 
-sub dehoomanize {
+sub to_unix {
     my $s = shift;
     $s =~ s/ /_/g;
     return $s;
@@ -312,7 +312,7 @@ sub report {
 		$results .= format_table($text);
 	    }
   }
-  $str .= "<h1>" . MyUtils::hoomanize($self->{name}) . "</h1>";
+  $str .= "<h1>" . MyUtils::to_human($self->{name}) . "</h1>";
   $str .= "<p><b>Votes:</b> " . $number_votes . "</p>";
   my $desc = "" . $self->{description};
   $desc =~ s/\n/<br \/>/g;
@@ -517,7 +517,7 @@ sub do_main {
 	    } else { # step two submitting
 		my $form = CGI::FormBuilder->new(name => "new_one", fields => \@more, header => 1, method   => 'post', required => \@required, keepextras => ['name', 'mode', 'candidates', 'step'], title => 'Create New Vote for ' . $form->field('name'), stylesheet => $MyUtils::css);
 		my $name = $form->cgi_param('name');
-		my $v = Vote->new(MyUtils::dehoomanize($name), $cands);
+		my $v = Vote->new(MyUtils::to_unix($name), $cands);
 		my $desc = $form->field('description');
 
 		$v->{description} = $desc;
@@ -536,7 +536,7 @@ sub do_main {
 	    print "<h3>Past Votes</h3>";
 	    my @votes = Vote->list_votes;
 	    foreach my $vote(@votes) {
-		print quickform("vote_" . $vote, "View " . MyUtils::hoomanize($vote), "view", $vote)->render;
+		print quickform("vote_" . $vote, "View " . MyUtils::to_human($vote), "view", $vote)->render;
 	    }
 	}
 #    } elsif($mode eq "add") {
@@ -577,7 +577,7 @@ sub do_main {
 	    push @more, $o;
 	    push @required, $o;
 	}
-	my $form = CGI::FormBuilder->new(name => "new_one", fields => \@more, header => 1, method   => 'post', required => \@required, keepextras => ['mode', 'name'], title => 'Editing vote metadata for ' . MyUtils::hoomanize($vote->{name}), stylesheet => $MyUtils::css);
+	my $form = CGI::FormBuilder->new(name => "new_one", fields => \@more, header => 1, method   => 'post', required => \@required, keepextras => ['mode', 'name'], title => 'Editing vote metadata for ' . MyUtils::to_human($vote->{name}), stylesheet => $MyUtils::css);
 	$form->field(name => 'description', type => 'textarea');
 	$form->field(name => 'number_candidates', validate => 'NUM');
 	my @opts = Vote->methods;
@@ -615,7 +615,7 @@ sub do_main {
 	do_main("index");
     } elsif($mode eq "ballots") {
 	my $vote = Vote->load(basename($thing_name));
-	my $form = CGI::FormBuilder->new(name => "ballots", fields => ['how_many', 'starting_number'], header => 1, method   => 'post', required => 'ALL', keepextras => ['mode', 'name'], title => 'Print or edit ballots for ' . MyUtils::hoomanize($vote->{name}), stylesheet => $MyUtils::css);
+	my $form = CGI::FormBuilder->new(name => "ballots", fields => ['how_many', 'starting_number'], header => 1, method   => 'post', required => 'ALL', keepextras => ['mode', 'name'], title => 'Print or edit ballots for ' . MyUtils::to_human($vote->{name}), stylesheet => $MyUtils::css);
 	my $tabindex = 1;
 	if($form->submitted && $form->validate) {
 	    my $many = $form->field('how_many');
@@ -630,7 +630,7 @@ sub do_main {
 		my $div = (($count % 2) == 0) ? "left" : "right";
 		$count += 1;
 		my $str = "<fieldset>";
-		$str .= "<h1>" . $vote->{name} . "</h1>";
+		$str .= "<h1>" . MyUtils::to_human($vote->{name}) . "</h1>";
 		$str .= "Reference ID#" . $num;
 		$str .= "<p>" . $vote->{description} . "</p>";
 		my $b = $vote->add_or_edit_vote($num);
