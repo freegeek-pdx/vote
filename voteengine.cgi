@@ -239,6 +239,22 @@ sub do_report {
   return $result;
 }
 
+sub get_mod_date {
+  my $self = shift;
+  my $file = $self->filename;
+  my $result = `ls -l $file | cut -d ' ' -f 6-8`;
+  chomp $result;
+  return $result;
+}
+
+sub get_checksum {
+  my $self = shift;
+  my $file = $self->filename;
+  my $result = `md5sum $file | cut -d ' ' -f 1`;
+  chomp $result;
+  return $result;
+}
+
 sub format_table {
     my $results = "";
     my $text = shift;
@@ -313,7 +329,7 @@ sub report {
 	    }
   }
   $str .= "<h1>" . MyUtils::to_human($self->{name}) . "</h1>";
-  $str .= "<p><b>Votes:</b> " . $number_votes . "</p>";
+  $str .= "<p><b>Vote Count:</b> " . $number_votes . "<br /><b>Last Updated:</b> " . $self->get_mod_date . "<br />" . "<b>Checksum (md5):</b> " . $self->get_checksum . "</p>";
   my $desc = "" . $self->{description};
   $desc =~ s/\n/<br \/>/g;
   $str .= "<p>" . $desc . "</p>";
@@ -478,10 +494,12 @@ sub header_for_main {
 sub show {
     my $v = shift;
     header_for_main();
+#    print '<div class="noprint">'; # TODO
 #    print quickform("add_vote", "Add Vote", "add", $v->{name})->render;
     print quickform("show_ballots", "Show Ballots", "ballots", $v->{name})->render;
     print quickform("edit_info", "Options", "edit", $v->{name})->render;
     print quickform("delete", "Delete Completely", "delete", $v->{name})->render;
+#    print "</div>";
     print $v->report;
 }
 
