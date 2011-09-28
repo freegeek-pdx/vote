@@ -1,3 +1,7 @@
+fieldset {
+	margin-bottom: 4px;
+}
+
 input, select, textarea {
 	border: 1px solid;
 }
